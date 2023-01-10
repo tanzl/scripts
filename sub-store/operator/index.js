@@ -1,23 +1,19 @@
 function operator(proxies, targetPlatform) {
   const _ = lodash
 
-  const host = _.get($arguments, 'host')
-  const prefix = _.get($arguments, 'prefix')
-  const suffix = _.get($arguments, 'suffix')
-  const port = _.get($arguments, 'port') 
-  const path = _.get($arguments, 'path')
-  const method = _.get($arguments, 'method')
+  const host = _.get($arguments, 'host', 'v3-l.bdxiguavod.com') // 西瓜视频
+  const hostPrefix = _.get($arguments, 'hostPrefix')
+  const hostSuffix = _.get($arguments, 'hostSuffix')
+  const port = _.get($arguments, 'port')
+  const portPrefix = _.get($arguments, 'portPrefix')
+  const portSuffix = _.get($arguments, 'portSuffix')
+  const path = _.get($arguments, 'path', '/')
+  const method = _.get($arguments, 'method', 'GET')
+  const defaultNetwork = _.get($arguments, 'network', 'http')
 
   return proxies.map((p = {}) => {
-    const network = _.get(p, 'network', 'http')
+    const network = _.get(p, 'network', defaultNetwork)
     const type = _.get(p, 'type')
-
-    if (prefix) {
-      _.set(p, 'name', `${prefix}${p.name}`)
-    }
-    if (suffix) {
-      _.set(p, 'name', `${p.name}${suffix}`)
-    }
 
     /* 只修改 vmess 和 vless */
     if (_.includes(['vmess', 'vless'], type) && network) {
@@ -25,14 +21,21 @@ function operator(proxies, targetPlatform) {
       // vmess-http 设置默认值
       if (network === 'http') {
         _.set(p, 'network', network)
-        _.set(p, 'http-opts.path', _.get(p, 'http-opts.path', ['/']))
-        _.set(p, 'http-opts.headers.method', _.get(p, 'http-opts.headers.method', ['GET']))
-        _.set(p, 'http-opts.headers.Host', _.get(p, 'http-opts.headers.Host', []))
+        _.set(p, 'http-opts.path', _.get(p, 'http-opts.path', [path]))
+        _.set(p, 'http-opts.method', _.get(p, 'http-opts.method', method))
+        _.set(p, 'http-opts.headers.Host', _.get(p, 'http-opts.headers.Host', [host]))
       }
 
       if (host) {
+        if (hostPrefix) {
+          _.set(p, 'name', `${hostPrefix}${p.name}`)
+        }
+        if (hostSuffix) {
+          _.set(p, 'name', `${p.name}${hostSuffix}`)
+        }
+
         if (targetPlatform === 'Clash') {
-           /* 把 非 server 的部分都设置为 host */
+          /* 把 非 server 的部分都设置为 host */
           _.set(p, 'servername', host)
         }
 
@@ -53,10 +56,17 @@ function operator(proxies, targetPlatform) {
         }
       }
       if (method && network === 'http') {
-        _.set(p, 'http-opts.headers.method', [method])
+        _.set(p, 'http-opts.method', method)
       }
+
       if (port) {
         _.set(p, 'port', port)
+        if (portPrefix) {
+          _.set(p, 'name', `${portPrefix}${p.name}`)
+        }
+        if (portSuffix) {
+          _.set(p, 'name', `${p.name}${portSuffix}`)
+        }
       }
 
       if (path && network) {
